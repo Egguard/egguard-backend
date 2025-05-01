@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class NotificationController {
     @GetMapping("/farms/{farm_id}/notifications")
     public ResponseEntity<Page<NotificationDto>> getNotificationsByFarm(
             @PathVariable("farm_id") Long farmId,
-            @PageableDefault(size = 10, sort = "timestamp,desc") Pageable pageable) {
+            @PageableDefault(size = 10, sort = "timestamp", direction = Sort.Direction.DESC) Pageable pageable) {
         // TODO: Add error handling for Farm not found (404)
         Page<NotificationDto> notifications = notificationService.getNotificationsByFarm(farmId, pageable);
         return ResponseEntity.ok(notifications);
