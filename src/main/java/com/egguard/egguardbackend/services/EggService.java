@@ -9,7 +9,9 @@ import com.egguard.egguardbackend.entities.Robot;
 import com.egguard.egguardbackend.repositories.EggRepository;
 import com.egguard.egguardbackend.repositories.FarmRepository;
 import com.egguard.egguardbackend.repositories.RobotRepository;
+import com.egguard.egguardbackend.utils.MathUtils;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,11 @@ public class EggService implements IEggService {
     private final RobotRepository robotRepository;
     private final FarmRepository farmRepository;
     private final ModelMapper modelMapper;
+    
+    /**
+     * The threshold distance below which two eggs are considered at the same position
+     */
+    private static final double DUPLICATE_DISTANCE_THRESHOLD = 1.0;
 
     @Override
     @Transactional
@@ -40,30 +47,48 @@ public class EggService implements IEggService {
             throw new IllegalStateException("Robot with id " + robotId + " is not associated with any farm.");
         }
 
-        // TODO: Implement logic to check for duplicate eggs if necessary based on coords/timestamp range?
-        // The API spec mentions returning 200 OK for duplicates, this needs clarification on definition.
+        List<Egg> unpickedEggs = eggRepository.findByFarmIdAndPicked(farm.getId(), false);
+        
+        for (Egg existingEgg : unpickedEggs) {
+            if (isDuplicate(existingEgg, request)) {
+                return null;
+            }
+        }
 
         Egg egg = modelMapper.map(request, Egg.class);
         egg.setFarm(farm);
-        // timestamp is set by @CreationTimestamp
-
         Egg savedEgg = eggRepository.save(egg);
         return modelMapper.map(savedEgg, EggDto.class);
+    }
+    
+    /**
+     * Checks if an existing egg and a new egg request represent the same egg
+     * Considers position and status (picked and broken)
+     * 
+     * @param existingEgg The existing egg from the database
+     * @param request The new egg registration request
+     * @return true if the eggs are considered duplicates, false otherwise
+     */
+    private boolean isDuplicate(Egg existingEgg, RegisterEggRequest request) {
+        double distance = MathUtils.calculateDistance(
+            existingEgg.getCoordX(), existingEgg.getCoordY(),
+            request.getCoordX(), request.getCoordY()
+        );
+
+        boolean sameLocation = distance <= DUPLICATE_DISTANCE_THRESHOLD;
+        boolean sameBrokenState = existingEgg.getBroken() == request.getBroken();
+
+        return sameLocation && sameBrokenState;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<EggDto> getEggsByFarm(Long farmId, Boolean picked, LocalDate date) {
-        // Validate farm exists
         if (!farmRepository.existsById(farmId)) {
             throw new EntityNotFoundException("Farm not found with id: " + farmId);
         }
 
-        // Base query: find by farm
         List<Egg> eggs;
-        // TODO: Refine filtering logic based on requirements
-        // This current logic fetches all and filters in memory - inefficient for large datasets.
-        // Consider creating more specific repository methods or using Specifications API.
         if (picked != null && date != null) {
              LocalDateTime startOfDay = date.atStartOfDay();
              LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
@@ -107,6 +132,5 @@ public class EggService implements IEggService {
             eggsToPick.forEach(egg -> egg.setPicked(true));
             eggRepository.saveAll(eggsToPick);
         }
-        // No return value needed as per spec (void/200 OK)
     }
-} 
+}

@@ -25,14 +25,11 @@ public class EggController {
     public ResponseEntity<EggDto> registerEgg(
             @PathVariable("robot_id") Long robotId,
             @Valid @RequestBody RegisterEggRequest request) {
-        // TODO: Add error handling for Robot not found (404)
-
         EggDto registeredEgg = eggService.registerEgg(robotId, request);
-        if (registeredEgg != null) { // Simplified check
+        if (registeredEgg != null) {
              return ResponseEntity.status(HttpStatus.CREATED).body(registeredEgg);
         } else {
-             // How duplicates are handled determines the response here (e.g., 200 OK with existing egg?)
-             return ResponseEntity.ok().build(); // Placeholder for 200 OK
+             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 
@@ -41,7 +38,6 @@ public class EggController {
             @PathVariable("farm_id") Long farmId,
             @RequestParam(required = false) Boolean picked,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        // TODO: Add error handling for Farm not found (404)
         List<EggDto> eggs = eggService.getEggsByFarm(farmId, picked, date);
         return ResponseEntity.ok(eggs);
     }
@@ -50,7 +46,6 @@ public class EggController {
     public ResponseEntity<Void> markEggsAsPicked(
             @PathVariable("farm_id") Long farmId,
             @RequestBody PickEggsRequest request) {
-        // TODO: Add error handling for Farm not found (404)
         eggService.markEggsAsPicked(farmId, request);
         return ResponseEntity.ok().build();
     }
