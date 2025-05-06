@@ -13,6 +13,4 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     Page<Notification> findByFarmId(Long farmId, Pageable pageable);
-    List<Notification> findByFarmIdAndTimestampAfter(Long farmId, LocalDateTime timestamp);
-    Page<Notification> findByFarmIdAndSeverity(Long farmId, NotificationSeverity severity, Pageable pageable);
-} 
+}

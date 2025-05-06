@@ -10,6 +10,4 @@ import java.util.List;
 public interface EggRepository extends JpaRepository<Egg, Long> {
     List<Egg> findByFarmId(Long farmId);
     List<Egg> findByFarmIdAndPicked(Long farmId, Boolean picked);
-    List<Egg> findByFarmIdAndBroken(Long farmId, Boolean broken);
-    List<Egg> findByFarmIdAndPickedAndBroken(Long farmId, Boolean picked, Boolean broken);
-} 
+}

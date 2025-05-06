@@ -8,5 +8,4 @@ import java.util.List;
 
 @Repository
 public interface FarmRepository extends JpaRepository<Farm, Long> {
-    List<Farm> findByUserId(Long userId);
-} 
+}
