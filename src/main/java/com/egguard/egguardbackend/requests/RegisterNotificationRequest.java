@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateNotificationRequest {
+public class RegisterNotificationRequest {
 
     @NotBlank(message = "Message cannot be blank")
     @Size(max = 1000, message = "Message length must be less than or equal to 1000 characters")
@@ -18,8 +18,4 @@ public class CreateNotificationRequest {
 
     @NotNull(message = "Severity must be provided")
     private NotificationSeverity severity;
-
-    // Representing the photo as a String (e.g., base64 or URL)
-    // Actual file upload needs MultipartFile handling in the controller.
-    private String photo;
 }
