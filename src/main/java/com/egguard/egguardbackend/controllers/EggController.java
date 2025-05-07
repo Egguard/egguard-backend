@@ -4,6 +4,7 @@ import com.egguard.egguardbackend.dtos.EggDto;
 import com.egguard.egguardbackend.requests.RegisterEggRequest;
 import com.egguard.egguardbackend.requests.PickEggsRequest;
 import com.egguard.egguardbackend.services.IEggService;
+import com.egguard.egguardbackend.exceptions.DuplicateEggException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -25,11 +26,11 @@ public class EggController {
     public ResponseEntity<EggDto> registerEgg(
             @PathVariable("robot_id") Long robotId,
             @Valid @RequestBody RegisterEggRequest request) {
-        EggDto registeredEgg = eggService.registerEgg(robotId, request);
-        if (registeredEgg != null) {
-             return ResponseEntity.status(HttpStatus.CREATED).body(registeredEgg);
-        } else {
-             return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        try {
+            EggDto registeredEgg = eggService.registerEgg(robotId, request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(registeredEgg);
+        } catch (DuplicateEggException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 

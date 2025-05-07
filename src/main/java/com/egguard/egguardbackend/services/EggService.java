@@ -10,10 +10,13 @@ import com.egguard.egguardbackend.repositories.EggRepository;
 import com.egguard.egguardbackend.repositories.FarmRepository;
 import com.egguard.egguardbackend.repositories.RobotRepository;
 import com.egguard.egguardbackend.utils.MathUtils;
+import com.egguard.egguardbackend.exceptions.DuplicateEggException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.constraints.Null;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EggService implements IEggService {
 
+    private static final Logger log = LoggerFactory.getLogger(EggService.class);
     private final EggRepository eggRepository;
     private final RobotRepository robotRepository;
     private final FarmRepository farmRepository;
@@ -51,7 +55,7 @@ public class EggService implements IEggService {
         
         for (Egg existingEgg : unpickedEggs) {
             if (isDuplicate(existingEgg, request)) {
-                return null;
+                throw new DuplicateEggException("An egg already exists at this location with the same status");
             }
         }
 
@@ -81,6 +85,7 @@ public class EggService implements IEggService {
         return sameLocation && sameBrokenState;
     }
 
+
     @Override
     @Transactional(readOnly = true)
     public List<EggDto> getEggsByFarm(Long farmId, Boolean picked, LocalDate date) {
@@ -89,21 +94,18 @@ public class EggService implements IEggService {
         }
 
         List<Egg> eggs;
-        if (picked != null && date != null) {
-             LocalDateTime startOfDay = date.atStartOfDay();
-             LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
-             eggs = eggRepository.findByFarmId(farmId).stream()
-                     .filter(egg -> picked.equals(egg.getPicked()))
-                     .filter(egg -> !egg.getTimestamp().isBefore(startOfDay) && egg.getTimestamp().isBefore(endOfDay))
-                     .collect(Collectors.toList());
+
+        if (date != null) {
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            
+            if (picked != null) {
+                eggs = eggRepository.findByFarmIdAndPickedAndTimestampBetween(farmId, picked, startOfDay, endOfDay);
+            } else {
+                eggs = eggRepository.findByFarmIdAndTimestampBetween(farmId, startOfDay, endOfDay);
+            }
         } else if (picked != null) {
             eggs = eggRepository.findByFarmIdAndPicked(farmId, picked);
-        } else if (date != null) {
-             LocalDateTime startOfDay = date.atStartOfDay();
-             LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
-             eggs = eggRepository.findByFarmId(farmId).stream()
-                     .filter(egg -> !egg.getTimestamp().isBefore(startOfDay) && egg.getTimestamp().isBefore(endOfDay))
-                     .collect(Collectors.toList());
         } else {
             eggs = eggRepository.findByFarmId(farmId);
         }
@@ -127,7 +129,6 @@ public class EggService implements IEggService {
         List<Egg> eggsToPick = eggRepository.findByFarmIdAndPicked(farmId, false).stream()
                 .filter(egg -> egg.getTimestamp().isBefore(beforeTimestamp))
                 .collect(Collectors.toList());
-
         if (!eggsToPick.isEmpty()) {
             eggsToPick.forEach(egg -> egg.setPicked(true));
             eggRepository.saveAll(eggsToPick);
