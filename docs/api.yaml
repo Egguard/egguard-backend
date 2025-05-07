@@ -19,9 +19,19 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: "#/components/schemas/NotificationCreateRequest"
+              type: object
+              properties:
+                notification:
+                  type: string
+                  format: json
+                  description: JSON string que representa la notificación (mensaje, severidad, etc.)
+                  example: '{"message": "Alerta de movimiento", "severity": "HIGH"}'
+                image:
+                  type: string
+                  format: binary
+                  description: Imagen opcional asociada a la notificación
       responses:
         "201":
           description: Notificación creada exitosamente
