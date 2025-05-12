@@ -45,12 +45,12 @@ BEGIN
                 NOW() - (random() * interval '30 days'),
                 severity_type,
                 CASE severity_type
-                    WHEN 'INFO' THEN 'Routine check completed'
-                    WHEN 'WARNING' THEN 'Low battery detected'
-                    ELSE 'Robot malfunction detected'
-                END || ' - Notification ' || i,
+                    WHEN 'INFO' THEN 'La bateria de tu robot se ha cargado al máximo'
+                    WHEN 'WARNING' THEN 'Se ha detectado un depredador en tu granja'
+                    ELSE 'Avería detectada en tu robot, contáctanos'
+                END,
                 CASE 
-                    WHEN random() > 0.5 THEN 'https://example.com/notification' || i || '.jpg'
+                    WHEN random() > 0.5 THEN 'https://picsum.photos/200'
                     ELSE NULL
                 END
             );
