@@ -31,3 +31,5 @@ chmod +x ~/.docker/cli-plugins/docker-compose
 # Verify Docker Compose installation
 echo "Verifying Docker Compose installation..."
 docker compose version
+
+sudo apt install docker-compose-v2
