@@ -69,11 +69,11 @@ BEGIN
             INSERT INTO eggs (farm_id, coord_x, coord_y, picked, broken, timestamp)
             VALUES (
                 farm_id,
-                random() * 100,
-                random() * 100,
-                random() > 0.7,  -- 30% chance of being picked
+                (random() * 8) - 4,         -- [-4, 4]
+                (random() * 15) - 7.5,      -- [-7.5, 7.5]
+                random() > 0.5,  -- 30% chance of being picked
                 random() > 0.8,  -- 20% chance of being broken
-                NOW() - (random() * interval '14 days')
+                NOW() - (random() * interval '7 days')
             );
         END LOOP;
     END LOOP;
