@@ -26,6 +26,7 @@ public class NotificationController {
 
     private final INotificationService notificationService;
 
+    
     @PostMapping(value = "/robots/{robot_id}/notifications", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<NotificationDto> registerNotification(
             @PathVariable("robot_id") Long robotId,
@@ -40,6 +41,7 @@ public class NotificationController {
         }
     }
 
+    @CrossOrigin(origins = "http://localhost:5173")
     @GetMapping("/farms/{farm_id}/notifications")
     public ResponseEntity<Page<NotificationDto>> getNotificationsByFarm(
             @PathVariable("farm_id") Long farmId,
