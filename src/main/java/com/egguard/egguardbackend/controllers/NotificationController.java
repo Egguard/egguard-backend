@@ -41,7 +41,6 @@ public class NotificationController {
         }
     }
 
-    @CrossOrigin(origins = "http://localhost:5173")
     @GetMapping("/farms/{farm_id}/notifications")
     public ResponseEntity<Page<NotificationDto>> getNotificationsByFarm(
             @PathVariable("farm_id") Long farmId,
