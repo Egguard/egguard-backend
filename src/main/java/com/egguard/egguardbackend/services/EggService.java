@@ -39,7 +39,7 @@ public class EggService implements IEggService {
     /**
      * The threshold distance below which two eggs are considered at the same position
      */
-    private static final double DUPLICATE_DISTANCE_THRESHOLD = 1.0;
+    private static final double DUPLICATE_DISTANCE_THRESHOLD = 0.05;
 
     @Override
     @Transactional
