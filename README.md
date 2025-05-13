@@ -17,11 +17,11 @@ docker-compose --profile production up --build
 
 ---------------
 In order to run in Linux, first run:
+
+To install docker, only run once
 ./install_docker_linux.sh
 
-Then run the commands you want from the previously shown but like this:
-
-sudo docker compose up --build
+Then run this to run whole backend:
 sudo docker compose --profile production up --build
 
 --------------
