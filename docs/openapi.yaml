@@ -1,0 +1,298 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+paths:
+  /api/v1/robots/{robot_id}/notifications:
+    post:
+      tags:
+      - notification-controller
+      operationId: registerNotification
+      parameters:
+      - name: robot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                notification:
+                  $ref: '#/components/schemas/RegisterNotificationRequest'
+                image:
+                  type: string
+                  format: binary
+              required:
+              - notification
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/NotificationDto'
+  /api/v1/robots/{robot_id}/eggs:
+    post:
+      tags:
+      - egg-controller
+      operationId: registerEgg
+      parameters:
+      - name: robot_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterEggRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EggDto'
+  /api/v1/farms/{farm_id}/eggs/picked:
+    patch:
+      tags:
+      - egg-controller
+      operationId: markEggsAsPicked
+      parameters:
+      - name: farm_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PickEggsRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+  /api/v1/farms/{farm_id}/notifications:
+    get:
+      tags:
+      - notification-controller
+      operationId: getNotificationsByFarm
+      parameters:
+      - name: farm_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/Pageable'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageNotificationDto'
+  /api/v1/farms/{farm_id}/eggs:
+    get:
+      tags:
+      - egg-controller
+      operationId: getEggsByFarm
+      parameters:
+      - name: farm_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: picked
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EggDto'
+components:
+  schemas:
+    RegisterNotificationRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          maxLength: 1000
+          minLength: 0
+        severity:
+          type: string
+          enum:
+          - INFO
+          - WARNING
+          - CRITICAL
+      required:
+      - severity
+    NotificationDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        farmId:
+          type: integer
+          format: int64
+        severity:
+          type: string
+          enum:
+          - INFO
+          - WARNING
+          - CRITICAL
+        message:
+          type: string
+        photoUrl:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    RegisterEggRequest:
+      type: object
+      properties:
+        coordX:
+          type: number
+          format: double
+        coordY:
+          type: number
+          format: double
+        broken:
+          type: boolean
+      required:
+      - broken
+      - coordX
+      - coordY
+    EggDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        farmId:
+          type: integer
+          format: int64
+        coordX:
+          type: number
+          format: double
+        coordY:
+          type: number
+          format: double
+        broken:
+          type: boolean
+        picked:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+    PickEggsRequest:
+      type: object
+      properties:
+        before:
+          type: string
+          format: date-time
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageNotificationDto:
+      type: object
+      properties:
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationDto'
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        first:
+          type: boolean
+        last:
+          type: boolean
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: '#/components/schemas/PageableObject'
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        sort:
+          $ref: '#/components/schemas/SortObject'
+        paged:
+          type: boolean
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
+        unpaged:
+          type: boolean
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean

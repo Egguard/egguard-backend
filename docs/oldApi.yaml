@@ -1,0 +1,244 @@
+openapi: 3.0.3
+info:
+  title: Egguard API
+  version: 1.0.0
+  description: API para la gestión de huevos y notificaciones en granjas automatizadas
+
+paths:
+  /api/v1/robots/{robotId}/notifications:
+    post:
+      summary: Crear una notificación desde un robot
+      tags:
+        - Notifications
+      parameters:
+        - name: robotId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                notification:
+                  type: string
+                  format: json
+                  description: JSON string que representa la notificación (mensaje, severidad, etc.)
+                  example: '{"message": "Alerta de movimiento", "severity": "HIGH"}'
+                image:
+                  type: string
+                  format: binary
+                  description: Imagen opcional asociada a la notificación
+      responses:
+        "201":
+          description: Notificación creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "400":
+          description: Datos inválidos
+        "404":
+          description: Robot no encontrado
+        "500":
+          description: Error interno
+
+  /api/v1/farms/{farmId}/notifications:
+    get:
+      summary: Obtener notificaciones de una granja
+      tags:
+        - Notifications
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de notificaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "404":
+          description: Granja no encontrada
+        "500":
+          description: Error interno
+          
+  /api/v1/robots/{robotId}/eggs:
+    post:
+      summary: Registrar un huevo desde un robot
+      tags:
+        - Eggs
+      parameters:
+        - name: robotId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EggCreateRequest"
+      responses:
+        "201":
+          description: Huevo registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Egg"
+        "200":
+          description: Huevo ya registrado (duplicado)
+        "400":
+          description: Datos inválidos
+        "404":
+          description: Robot no encontrado
+        "500":
+          description: Error interno
+
+  /api/v1/farms/{farmId}/eggs:
+    get:
+      summary: Obtener huevos registrados en una granja
+      tags:
+        - Eggs
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: picked
+          in: query
+          schema:
+            type: boolean
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Lista de huevos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Egg"
+        "404":
+          description: Granja no encontrada
+        "500":
+          description: Error interno
+
+  /api/v1/farms/{farmId}/eggs/picked:
+    patch:
+      summary: Marcar huevos como recogidos
+      tags:
+        - Eggs
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PickEggsRequest"
+      responses:
+        "200":
+          description: Huevos marcados como recogidos
+        "404":
+          description: Granja no encontrada
+        "500":
+          description: Error interno
+
+components:
+  schemas:
+
+    NotificationCreateRequest:
+      type: object
+      required:
+        - message
+        - severity
+      properties:
+        message:
+          type: string
+          maxLength: 1000
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        photo:
+          type: string
+          format: binary
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        farmId:
+          type: string
+        robotId:
+          type: string
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        message:
+          type: string
+        photoUrl:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    EggCreateRequest:
+      type: object
+      required:
+        - coordX
+        - coordY
+        - broken
+      properties:
+        coordX:
+          type: number
+        coordY:
+          type: number
+        broken:
+          type: boolean
+
+    Egg:
+      type: object
+      properties:
+        id:
+          type: string
+        farmId:
+          type: string
+        coordX:
+          type: number
+        coordY:
+          type: number
+        broken:
+          type: boolean
+        picked:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+
+    PickEggsRequest:
+      type: object
+      properties:
+        before:
+          type: string
+          format: date-time
+
