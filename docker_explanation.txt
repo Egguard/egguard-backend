@@ -1,0 +1,18 @@
+Detener contendores en ejecucion: docker compose --profile production down -v
+Eliminar volumenes: docker volume rm $(docker volume ls -q)
+Eliminar imagenes: docker rmi $(docker images -q)
+
+
+We have a multistage dockerfile. First it builds the transitive image where all 
+dependencies and the src are compiled. This gets the dependencies into the image and
+a fat *.jar file, which is the app, the dependencies are also compiled into the jar.
+
+Then the last image, the one we actually use, brings the jar (compiled app)
+from the transitive image and puts it into one app.jar so that then we can execute it
+with the JVM.
+
+The build of the Dockerfile uses cache, if it sees that the pom.xml or the src has notifications
+changed it uses caching.
+
+When backend container is stopped the app stops as well. When we start the container
+back, docker triggers the ENTRYPOINT defined in the Dockerfile to run the app.
