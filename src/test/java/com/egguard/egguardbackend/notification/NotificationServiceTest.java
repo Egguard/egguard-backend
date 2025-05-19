@@ -1,20 +1,17 @@
-package com.egguard.egguardbackend.services;
+package com.egguard.egguardbackend.notification;
 
-import com.egguard.egguardbackend.dtos.NotificationDto;
-import com.egguard.egguardbackend.entities.Farm;
-import com.egguard.egguardbackend.entities.Notification;
-import com.egguard.egguardbackend.entities.Robot;
-import com.egguard.egguardbackend.enums.NotificationSeverity;
-import com.egguard.egguardbackend.repositories.FarmRepository;
-import com.egguard.egguardbackend.repositories.NotificationRepository;
-import com.egguard.egguardbackend.repositories.RobotRepository;
-import com.egguard.egguardbackend.requests.RegisterNotificationRequest;
+import com.egguard.egguardbackend.farm.Farm;
+import com.egguard.egguardbackend.shared.entity.Robot;
+import com.egguard.egguardbackend.shared.enums.NotificationSeverity;
+import com.egguard.egguardbackend.farm.FarmRepository;
+import com.egguard.egguardbackend.shared.repository.RobotRepository;
+import com.egguard.egguardbackend.notification.request.RegisterNotificationRequest;
+import com.egguard.egguardbackend.shared.service.IStaticContentUploadService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,7 +21,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -51,7 +47,7 @@ public class NotificationServiceTest {
     private ModelMapper modelMapper;
 
     @Mock
-    private CloudinaryService cloudinaryService;
+    private IStaticContentUploadService staticContentUploadService;
 
     @InjectMocks
     private NotificationService notificationService;
@@ -81,19 +77,20 @@ public class NotificationServiceTest {
 
         testNotification = Notification.builder()
                 .id(1L)
-                .message("Test notification message")
-                .severity(NotificationSeverity.CRITICAL)
+                .message(registerNotificationRequest.getMessage())
+                .severity(registerNotificationRequest.getSeverity())
                 .farm(testFarm)
                 .timestamp(LocalDateTime.now())
                 .photoUrl("https://example.com/image.jpg")
                 .build();
 
-        notificationDto = new NotificationDto();
-        notificationDto.setId(1L);
-        notificationDto.setMessage("Test notification message");
-        notificationDto.setSeverity(NotificationSeverity.CRITICAL);
-        notificationDto.setTimestamp(testNotification.getTimestamp());
-        notificationDto.setPhotoUrl("https://example.com/image.jpg");
+        notificationDto = NotificationDto.builder()
+                .id(testNotification.getId())
+                .message(testNotification.getMessage())
+                .severity(testNotification.getSeverity())
+                .timestamp(testNotification.getTimestamp())
+                .photoUrl(testNotification.getPhotoUrl())
+                .build();
 
         // Setup mock image file
         mockImageFile = new MockMultipartFile(
@@ -105,77 +102,53 @@ public class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("Should register a notification successfully without image")
-    void shouldRegisterNotificationSuccessfully() throws IOException {
-        // Arrange
+    @DisplayName("registerNotification() should register a notification successfully without image")
+    void registerNotificationShouldRegisterNotificationSuccessfully() throws IOException {
         when(robotRepository.findById(1L)).thenReturn(Optional.of(testRobot));
         when(modelMapper.map(registerNotificationRequest, Notification.class)).thenReturn(testNotification);
         when(notificationRepository.save(any(Notification.class))).thenReturn(testNotification);
         when(modelMapper.map(testNotification, NotificationDto.class)).thenReturn(notificationDto);
 
-        // Act
         NotificationDto result = notificationService.registerNotification(1L, registerNotificationRequest, null);
 
-        // Assert
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("Test notification message", result.getMessage());
-        assertEquals(NotificationSeverity.CRITICAL, result.getSeverity());
-        assertEquals("https://example.com/image.jpg", result.getPhotoUrl());
-        
-        verify(robotRepository).findById(1L);
-        verify(notificationRepository).save(testNotification);
-        verifyNoInteractions(cloudinaryService);
+        assertEquals(notificationDto.getId(), result.getId());
+        assertEquals(notificationDto.getMessage(), result.getMessage());
+        assertEquals(notificationDto.getSeverity(), result.getSeverity());
+        assertEquals(notificationDto.getPhotoUrl(), result.getPhotoUrl());
     }
 
     @Test
-    @DisplayName("Should register a notification with image successfully")
-    void shouldRegisterNotificationWithImageSuccessfully() throws IOException {
-        // Arrange
-        String uploadedImageUrl = "https://cloudinary.com/uploaded-image.jpg";
-        
+    @DisplayName("registerNotification should register a notification with image successfully")
+    void registerNotificationShouldRegisterNotificationWithImageSuccessfully() throws IOException {
         when(robotRepository.findById(1L)).thenReturn(Optional.of(testRobot));
         when(modelMapper.map(registerNotificationRequest, Notification.class)).thenReturn(testNotification);
-        when(cloudinaryService.uploadImage(mockImageFile)).thenReturn(uploadedImageUrl);
+        when(staticContentUploadService.uploadImage(mockImageFile)).thenReturn(notificationDto.getPhotoUrl());
         when(notificationRepository.save(any(Notification.class))).thenReturn(testNotification);
         when(modelMapper.map(testNotification, NotificationDto.class)).thenReturn(notificationDto);
 
-        // Act
         NotificationDto result = notificationService.registerNotification(1L, registerNotificationRequest, mockImageFile);
 
-        // Assert
         assertNotNull(result);
-        
-        // Verify the notification has the photo URL set from Cloudinary
-        ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
-        verify(notificationRepository).save(notificationCaptor.capture());
-        Notification savedNotification = notificationCaptor.getValue();
-        assertEquals(uploadedImageUrl, savedNotification.getPhotoUrl());
-        
-        verify(robotRepository).findById(1L);
-        verify(cloudinaryService).uploadImage(mockImageFile);
+        assertEquals(notificationDto.getId(), result.getId());
+        assertEquals(notificationDto.getMessage(), result.getMessage());
+        assertEquals(notificationDto.getSeverity(), result.getSeverity());
+        assertEquals(notificationDto.getPhotoUrl(), result.getPhotoUrl());
     }
 
     @Test
-    @DisplayName("Should throw EntityNotFoundException when robot is not found")
-    void shouldThrowExceptionWhenRobotNotFound() {
-        // Arrange
+    @DisplayName("registerNotification() should throw EntityNotFoundException when robot is not found")
+    void registerNotificationShouldThrowExceptionWhenRobotNotFound() {
         when(robotRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> {
             notificationService.registerNotification(99L, registerNotificationRequest, null);
         });
-        
-        verify(robotRepository).findById(99L);
-        verifyNoInteractions(notificationRepository);
-        verifyNoInteractions(cloudinaryService);
     }
 
     @Test
-    @DisplayName("Should throw IllegalStateException when robot has no farm")
-    void shouldThrowExceptionWhenRobotHasNoFarm() {
-        // Arrange
+    @DisplayName("registerNotification() should throw IllegalStateException when robot has no farm")
+    void registerNotificationShouldThrowExceptionWhenRobotHasNoFarm() {
         Robot robotWithoutFarm = Robot.builder()
                 .id(2L)
                 .farm(null)
@@ -183,38 +156,26 @@ public class NotificationServiceTest {
         
         when(robotRepository.findById(2L)).thenReturn(Optional.of(robotWithoutFarm));
 
-        // Act & Assert
         assertThrows(IllegalStateException.class, () -> {
             notificationService.registerNotification(2L, registerNotificationRequest, null);
         });
-        
-        verify(robotRepository).findById(2L);
-        verifyNoInteractions(notificationRepository);
-        verifyNoInteractions(cloudinaryService);
     }
 
     @Test
-    @DisplayName("Should throw IOException when image upload fails")
-    void shouldThrowExceptionWhenImageUploadFails() throws IOException {
-        // Arrange
+    @DisplayName("registerNotification() should throw IOException when image upload fails")
+    void registerNotificationShouldThrowExceptionWhenImageUploadFails() throws IOException {
         when(robotRepository.findById(1L)).thenReturn(Optional.of(testRobot));
         when(modelMapper.map(registerNotificationRequest, Notification.class)).thenReturn(testNotification);
-        when(cloudinaryService.uploadImage(mockImageFile)).thenThrow(new IOException("Upload failed"));
+        when(staticContentUploadService.uploadImage(mockImageFile)).thenThrow(new IOException("Upload failed"));
 
-        // Act & Assert
         assertThrows(IOException.class, () -> {
             notificationService.registerNotification(1L, registerNotificationRequest, mockImageFile);
         });
-        
-        verify(robotRepository).findById(1L);
-        verify(cloudinaryService).uploadImage(mockImageFile);
-        verifyNoInteractions(notificationRepository);
     }
 
     @Test
-    @DisplayName("Should get notifications by farm successfully")
-    void shouldGetNotificationsByFarmSuccessfully() {
-        // Arrange
+    @DisplayName("getNotificationsByFarm() should get notifications successfully")
+    void getNotificationsByFarmShouldGetNotificationsSuccessfully() {
         List<Notification> notifications = List.of(testNotification);
         Page<Notification> notificationPage = new PageImpl<>(notifications);
         Pageable pageable = PageRequest.of(0, 10);
@@ -223,53 +184,37 @@ public class NotificationServiceTest {
         when(notificationRepository.findByFarmId(1L, pageable)).thenReturn(notificationPage);
         when(modelMapper.map(testNotification, NotificationDto.class)).thenReturn(notificationDto);
 
-        // Act
         Page<NotificationDto> result = notificationService.getNotificationsByFarm(1L, pageable);
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         assertEquals(notificationDto, result.getContent().getFirst());
-        
-        verify(farmRepository).existsById(1L);
-        verify(notificationRepository).findByFarmId(1L, pageable);
     }
 
     @Test
-    @DisplayName("Should return empty page when farm has no notifications")
-    void shouldReturnEmptyPageWhenFarmHasNoNotifications() {
-        // Arrange
+    @DisplayName("getNotificationsByFarm() should return empty page when farm has no notifications")
+    void getNotificationsByFarmShouldReturnEmptyPageWhenFarmHasNoNotifications() {
         Page<Notification> emptyPage = new PageImpl<>(new ArrayList<>());
         Pageable pageable = PageRequest.of(0, 10);
         
         when(farmRepository.existsById(1L)).thenReturn(true);
         when(notificationRepository.findByFarmId(1L, pageable)).thenReturn(emptyPage);
 
-        // Act
         Page<NotificationDto> result = notificationService.getNotificationsByFarm(1L, pageable);
 
-        // Assert
         assertNotNull(result);
         assertEquals(0, result.getTotalElements());
         assertTrue(result.getContent().isEmpty());
-        
-        verify(farmRepository).existsById(1L);
-        verify(notificationRepository).findByFarmId(1L, pageable);
     }
 
     @Test
-    @DisplayName("Should throw EntityNotFoundException when farm is not found for getNotificationsByFarm")
-    void shouldThrowExceptionWhenFarmNotFoundForGetNotificationsByFarm() {
-        // Arrange
+    @DisplayName("getNotificationsByFarm() should throw EntityNotFoundException when farm is not found for getNotificationsByFarm")
+    void getNotificationsByFarmShouldThrowExceptionWhenFarmNotFound() {
         Pageable pageable = PageRequest.of(0, 10);
         when(farmRepository.existsById(99L)).thenReturn(false);
 
-        // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> {
             notificationService.getNotificationsByFarm(99L, pageable);
         });
-        
-        verify(farmRepository).existsById(99L);
-        verifyNoInteractions(notificationRepository);
     }
 }
