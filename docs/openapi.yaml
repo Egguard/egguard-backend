@@ -84,6 +84,37 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/farms/{farm_id}/stats:
+    get:
+      tags:
+      - farm-stats-controller
+      operationId: getFarmStats
+      parameters:
+      - name: farm_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: startDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: endDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FarmStatsDto'
   /api/v1/farms/{farm_id}/notifications:
     get:
       tags:
@@ -222,6 +253,21 @@ components:
         before:
           type: string
           format: date-time
+    FarmStatsDto:
+      type: object
+      properties:
+        totalPickedEggs:
+          type: integer
+          format: int64
+        averageNotBrokenEggsPickedPerDay:
+          type: integer
+          format: int64
+        averageBrokenEggsPickedPerDay:
+          type: integer
+          format: int64
+        brokenEggsPercentage:
+          type: number
+          format: double
     Pageable:
       type: object
       properties:
@@ -240,12 +286,12 @@ components:
     PageNotificationDto:
       type: object
       properties:
-        totalPages:
-          type: integer
-          format: int32
         totalElements:
           type: integer
           format: int64
+        totalPages:
+          type: integer
+          format: int32
         size:
           type: integer
           format: int32
@@ -277,6 +323,8 @@ components:
           format: int64
         sort:
           $ref: '#/components/schemas/SortObject'
+        unpaged:
+          type: boolean
         paged:
           type: boolean
         pageSize:
@@ -285,14 +333,12 @@ components:
         pageNumber:
           type: integer
           format: int32
-        unpaged:
-          type: boolean
     SortObject:
       type: object
       properties:
         empty:
           type: boolean
-        sorted:
-          type: boolean
         unsorted:
+          type: boolean
+        sorted:
           type: boolean
