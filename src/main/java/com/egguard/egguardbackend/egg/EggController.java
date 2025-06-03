@@ -48,14 +48,4 @@ public class EggController {
         eggService.markEggsAsPicked(farmId, request);
         return ResponseEntity.ok().build();
     }
-/*
-    @GetMapping("/farms/{farm_id}/eggs/stats-summary")
-    public ResponseEntity<EggsStatsSummaryDto> getEggsStatsSummary(
-            @PathVariable("farm_id") Long farmId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        EggsStatsSummaryDto eggsStatsSummaryDto = eggService.getEggsStatsSummary(farmId, from, to);
-        return ResponseEntity.ok(eggsStatsSummaryDto);
-    }
-*/
 }
