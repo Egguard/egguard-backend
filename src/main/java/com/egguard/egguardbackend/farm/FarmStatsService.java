@@ -53,6 +53,7 @@ public class FarmStatsService implements IFarmStatsService {
         long avgPickedBrokenPerDay = daysBetween == 0 ? 0 : pickedBroken / daysBetween;
 
         double brokenEggsPercentage = totalPicked == 0 ? 0.0 : (double) pickedBroken * 100 / totalPicked;
+        brokenEggsPercentage = Math.round(brokenEggsPercentage * 100.0) / 100.0;
 
         return FarmStatsDto.builder()
                 .totalPickedEggs(totalPicked)
