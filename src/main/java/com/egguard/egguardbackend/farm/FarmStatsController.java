@@ -26,8 +26,8 @@ public class FarmStatsController {
         if (startDate == null) startDate = endDate.minusDays(7);
 
         if (startDate.isAfter(endDate)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Start date cannot be after end date.");
         }
         FarmStatsDto stats = farmStatsService.getFarmStats(farmId, startDate, endDate);
         return ResponseEntity.ok(stats);
